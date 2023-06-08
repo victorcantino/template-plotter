@@ -1,0 +1,17 @@
+{
+    "name": "victor/template-plotter",
+    "require": {
+        "tecnickcom/tcpdf": "^6.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Victor\\TemplatePlotter\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Victor",
+            "email": "victor.cantino@gmail.com"
+        }
+    ]
+}
