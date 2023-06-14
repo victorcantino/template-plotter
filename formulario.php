@@ -15,6 +15,12 @@
         <label for="verso">Arquivo do verso do material:</label>
         <input type="file" id="verso" name="verso" accept=".png"><br><br>
 
+        <label for="tictac_frente">Arquivo do tictac frente do material:</label>
+        <input type="file" id="tictac_frente" name="tictac_frente" accept=".png"><br><br>
+
+        <label for="tictac_verso">Arquivo do tictac verso do material:</label>
+        <input type="file" id="tictac_verso" name="tictac_verso" accept=".png"><br><br>
+
         <label for="largura">Largura do material:</label>
         <select id="largura" name="largura">
             <option value="15">15mm</option>
