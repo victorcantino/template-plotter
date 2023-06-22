@@ -36,7 +36,6 @@
         <label for="quantidade">Quantidade necessária:</label>
         <input type="number" id="quantidade" name="quantidade" min="1"><br><br>
 
-
         <label for="superficie">Aplicação da arte:</label>
         <select id="superficie" name="superficie">
             <option value=""></option>
