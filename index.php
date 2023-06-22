@@ -1,215 +1,74 @@
-<?php
-require_once __DIR__ . '/vendor/autoload.php';
+<!DOCTYPE html>
+<html>
 
-define('LARGURA_PAGINA', 260);
-define('IMAGENS', array(
-    'frente',
-    'verso',
-    'tictac_frente',
-    'tictac_verso'
-));
-define('MATERIAIS', array(
-    'Chaveiro',
-    'Pulseira de acesso',
-    'Cordão/Tirante',
-    'Cordão/Tirante com tic-tac',
-));
-define('SUPERFICIES', array(
-    'Apenas Frente',
-    'Frente e Verso iguais',
-    'Frente e Verso diferentes'
-));
-define('LARGURA_MATERIAL', array(
-    '15',
-    '20',
-    '25'
-));
-define('COMPRIMENTO_MATERIAL', array(
-    '300',
-    '360',
-    '850',
-    '950',
-    '1020',
-    '1200',
-    '1400'
-));
-define('DISTANCIA_DOBRA', 25);
+<head>
+    <script src="script.js"></script>
+    <title>Gerar arquivo de impressão</title>
+</head>
 
-require_once __DIR__ . '/formulario.php';
+<body>
+    <h1>Gerar arquivo de impressão</h1>
 
-// Filtra e valida o tipo de arquivo
-function validaImagem($arquivo): bool
-{
-    return filter_var($arquivo['type'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) !== false && $arquivo['type'] == 'image/png';
-}
+    <form action="salva.php" method="POST" enctype="multipart/form-data">
 
-// Salva um arquivo com o 
-function salvaImagem($arquivo, $nome)
-{
-    if (!move_uploaded_file($arquivo['tmp_name'], __DIR__ . "/$nome.png")) {
-        echo 'Erro ao salvar o arquivo: ' . __DIR__  . "/$nome.png";
-        exit;
-    }
-}
+        <label for="material">Material:</label>
+        <select id="material" name="material">
+            <option value=""></option>
+            <?php foreach (MATERIAIS as $material) : ?>
+                <option value="<?= $material ?>"><?= $material ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label for="largura">Largura:</label>
+        <select id="largura" name="largura">
+            <option value=""></option>
+            <?php foreach (LARGURA_MATERIAL as $largura) : ?>
+                <option value="<?= $largura; ?>"><?= $largura; ?>mm</option>
+            <?php endforeach; ?>
+        </select>
+        <label for="comprimento">Comprimento:</label>
+        <select id="comprimento" name="comprimento">
+            <option value=""></option>
+            <?php foreach (COMPRIMENTO_MATERIAL as $comprimento) : ?>
+                <option value="<?= $comprimento ?>"><?= $comprimento ?>mm</option>
+            <?php endforeach; ?>
+        </select><br><br>
 
-function salvaImagens($arquivos, $nome)
-{
-    foreach (IMAGENS as $imagem) {
-        if (validaImagem($arquivos[$imagem])) {
-            salvaImagem($arquivos[$imagem], "$nome $imagem");
-        }
-    }
-}
+        <label for="quantidade">Quantidade necessária:</label>
+        <input type="number" id="quantidade" name="quantidade" min="1"><br><br>
 
-// Função para validar um valor numérico inteiro positivo
-function validaNumeroInteiroPositivo($valor)
-{
-    return filter_var($valor, FILTER_VALIDATE_INT) !== false && intval($valor) > 0;
-}
 
-// Função para validar uma string não vazia
-function validaStringNaoVazia($valor)
-{
-    return filter_var($valor, FILTER_SANITIZE_FULL_SPECIAL_CHARS) !== false && trim($valor) !== '';
-}
+        <label for="superficie">Aplicação da arte:</label>
+        <select id="superficie" name="superficie">
+            <option value=""></option>
+            <?php foreach (SUPERFICIES as $superficie) : ?>
+                <option value="<?= $superficie ?>"><?= $superficie ?></option>
+            <?php endforeach; ?>
+        </select><br><br>
 
-function geraNome($formulario): string
-{
-    return "{$formulario['os']} - {$formulario['projeto']} - {$formulario['modelo']} - {$formulario['observacao']}";
-}
+        <label for="frente">Arquivo da frente:</label>
+        <input type="file" id="frente" name="frente" accept=".png"><br><br>
 
-function criaArquivoPDF(string $nome, string $imagem, int $imagens_lado_a_lado, int $comprimento_material, int $largura_material, string $material, $quantidade)
-{
-    // Carregar a imagem PNG
-    $caminhoImagem = __DIR__ . "/$nome $imagem.png";
-    if (getimagesize($caminhoImagem) !== false) {
+        <label for="verso">Arquivo da verso:</label>
+        <input type="file" id="verso" name="verso" accept=".png"><br><br>
 
-        // Criar nova instância do TCPDF
-        $pdf = new TCPDF('P', 'mm', array(LARGURA_PAGINA, $comprimento_material), true, 'UTF-8', false);
+        <label for="tictac_frente">Arquivo da da frente do tic-tac:</label>
+        <input type="file" id="tictac_frente" name="tictac_frente" accept=".png"><br><br>
 
-        // Definir informações do documento PDF
-        $pdf->SetCreator('TCPDF');
-        $pdf->SetAuthor('Victor Cantino');
-        $pdf->SetTitle($nome);
-        $pdf->SetPrintHeader(false);
-        $pdf->SetPrintFooter(false);
+        <label for="tictac_verso">Arquivo da dp verso do tic-tac:</label>
+        <input type="file" id="tictac_verso" name="tictac_verso" accept=".png"><br><br>
 
-        // permite que a imagem toque a borda inferior
-        $pdf->setAutoPageBreak(false);
 
-        // Adicionar nova página ao PDF
-        $pdf->AddPage();
+        <label for="os">OS:</label>
+        <input type="text" id="os" name="os">
+        <label for="projeto">Projeto:</label>
+        <input type="text" id="projeto" name="projeto">
+        <label for="modelo">Modelo:</label>
+        <input type="text" id="modelo" name="modelo">
+        <label for="observacao">Observação:</label>
+        <input type="text" id="observacao" name="observacao"><br><br>
 
-        distribuirImagens($pdf, $imagens_lado_a_lado, $caminhoImagem, $largura_material, $comprimento_material, $material);
+        <input type="submit" value="Enviar">
+    </form>
+</body>
 
-        // Gerar o arquivo PDF
-        $pdf->Output(__DIR__ . "/$nome $imagem.pdf", 'F');
-    }
-}
-
-function distribuirImagens($pdf, $imagens_lado_a_lado, $caminhoImagem, $largura_material, $comprimento_material, $material)
-{
-    // Distribuir as imagens horizontalmente
-    for ($i = 0; $i < $imagens_lado_a_lado; $i++) {
-        $x = $i * (LARGURA_PAGINA / $imagens_lado_a_lado);
-        $y = 0; // sempre no topo da página
-        $pdf->Image($caminhoImagem, $x, $y, $largura_material, $comprimento_material);
-        if ($material === 'Pulseira de acesso') {
-            desenhaLinhaInclinada($pdf, $largura_material, $x, $y);
-        }
-        if ($material !== 'Pulseira de acesso') {
-            desenhaLinhaHorizontal($pdf, $largura_material, $x, $y);
-        }
-    }
-}
-
-function desenhaLinhaHorizontal($pdf, $largura_material, $x, $y, $cor = [255, 255, 0]): void
-{
-    $pdf->setLineStyle([
-        'dash' => 10, // linha tracejada
-        'color' => $cor,  // linha amarela
-        'width' => 1 // espessura da linha
-    ]);
-
-    // Desenha uma linha no topo da página como marcação para montagem
-    $pdf->Line($x, DISTANCIA_DOBRA, $x + $largura_material, DISTANCIA_DOBRA);
-}
-
-function desenhaLinhaInclinada($pdf, $largura_material, $x, $y, $cor = [255, 255, 0]): void
-{
-    $pdf->setLineStyle([
-        'color' => $cor,  // linha amarela
-        'width' => 1 // espessura da linha
-    ]);
-
-    // Desenha uma linha no topo da página como marcação para montagem
-    $pdf->Line($x, $y, $x + $largura_material, DISTANCIA_DOBRA);
-}
-
-function imagensPorPagina($largura_material, $quantidade): int
-{
-    if ($quantidade >= 1 && $quantidade < 8) {
-        return $quantidade;
-    }
-    switch ($largura_material) {
-        case 15:
-            return 11;
-        case 20:
-            return 9;
-        case 25:
-            return 8;
-    }
-    return 0;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $nome_novo = geraNome($_POST);
-    salvaImagens($_FILES, $nome_novo);
-
-    // Definir as dimensões do material em mm
-    $material = $_POST['material'];
-    $largura_material = $_POST['largura'];
-    $comprimento_material = $_POST['comprimento'];
-    $quantidade = $_POST['quantidade'];
-    $numero_os = $_POST['os'];
-    $projeto = $_POST['projeto'];
-    $modelo = $_POST['modelo'];
-    $observacao = $_POST['observacao'];
-
-    // Validar as dimensões do material
-    if (!validaNumeroInteiroPositivo($largura_material) || !validaNumeroInteiroPositivo($comprimento_material)) {
-        echo "Dimensões do material inválidas!";
-        exit;
-    }
-
-    // Validar a quantidade
-    if (!validaNumeroInteiroPositivo($quantidade)) {
-        echo "Quantidade inválida!";
-        exit;
-    }
-
-    // Validar o número da ordem de serviço (OS)
-    if (!validaStringNaoVazia($numero_os)) {
-        echo "Número da ordem de serviço (OS) inválido!";
-        exit;
-    }
-
-    // Validar o projeto
-    if (!validaStringNaoVazia($projeto)) {
-        echo "Projeto inválido!";
-        exit;
-    }
-
-    // Validar o modelo
-    if (!validaStringNaoVazia($modelo)) {
-        echo "Modelo inválido!";
-        exit;
-    }
-
-    $repetir = imagensPorPagina($largura_material, $quantidade);
-
-    foreach (IMAGENS as $imagem) {
-        criaArquivoPDF($nome_novo, $imagem, $repetir, $comprimento_material, $largura_material, $material, $quantidade);
-    }
-}
+</html>
