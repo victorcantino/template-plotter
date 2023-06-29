@@ -1,65 +1,35 @@
 <?php
+// header('location: /');
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/Constantes.php';
 
-use FiltraFormulario;
-use CriaPDF;
-
-require_once __DIR__ . '/formulario.php';
-
-// Filtra e valida o tipo de arquivo
-function geraNome($formulario): string
-{
-    return "{$formulario['os']} - {$formulario['projeto']} - {$formulario['modelo']} - {$formulario['observacao']}";
-}
-
+use Victor\TemplatePlotter\Formulario;
+use Victor\TemplatePlotter\Imagem;
+use Victor\TemplatePlotter\CriaPDF;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $nome_novo = geraNome($_POST);
-    salvaImagens($_FILES, $nome_novo);
+    $formulario = new Formulario($_POST);
 
-    // Definir as dimensões do material em mm
-    $material = $_POST['material'];
-    $largura_material = $_POST['largura'];
-    $comprimento_material = $_POST['comprimento'];
-    $quantidade = $_POST['quantidade'];
-    $numero_os = $_POST['os'];
-    $projeto = $_POST['projeto'];
-    $modelo = $_POST['modelo'];
-    $observacao = $_POST['observacao'];
+    if ($formulario->valida()) {
 
-    // Validar as dimensões do material
-    if (!FiltraFormulario::validaNumeroInteiroPositivo($largura_material) || !FiltraFormulario::validaNumeroInteiroPositivo($comprimento_material)) {
-        echo "Dimensões do material inválidas!";
-        exit;
-    }
+        $nome_arquivo = $formulario->__toString();
 
-    // Validar a quantidade
-    if (!FiltraFormulario::validaNumeroInteiroPositivo($quantidade)) {
-        echo "Quantidade inválida!";
-        exit;
-    }
+        foreach ($_FILES as $superficie => $arquivo) {
 
-    // Validar o número da ordem de serviço (OS)
-    if (!FiltraFormulario::validaStringNaoVazia($numero_os)) {
-        echo "Número da ordem de serviço (OS) inválido!";
-        exit;
-    }
+            $nome_final = "$nome_arquivo - $superficie";
+            $imagem = new Imagem($nome_final, $arquivo);
+            $caminho_imagem = $imagem->nome() . '.' . $imagem->extensao();
+            if ($imagem->validaPNG() && $imagem->salva()) {
 
-    // Validar o projeto
-    if (!FiltraFormulario::validaStringNaoVazia($projeto)) {
-        echo "Projeto inválido!";
-        exit;
-    }
-
-    // Validar o modelo
-    if (!FiltraFormulario::validaStringNaoVazia($modelo)) {
-        echo "Modelo inválido!";
-        exit;
-    }
-
-    foreach (IMAGENS as $imagem) {
-        $pdf = new CriaPDF($nome_novo, $material, $comprimento_material, $largura_material, $imagem, $cor_linha);
+                $pdf = new CriaPDF(
+                    $nome_final,
+                    $formulario->material(),
+                    $formulario->comprimentoMaterial(),
+                    $formulario->larguraMaterial(),
+                    $caminho_imagem,
+                    $formulario->corLinha()
+                );
+            }
+        }
     }
 }
