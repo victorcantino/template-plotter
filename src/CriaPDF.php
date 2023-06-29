@@ -54,7 +54,7 @@ class CriaPDF
             $this->distribuiImagens();
 
             // Gerar o arquivo PDF
-            $this->pdf->Output(__DIR__ . "/$nome_pdf.pdf", 'F');
+            $this->pdf->Output(__DIR__ . "/../$nome_pdf.pdf", 'F');
         }
     }
 
