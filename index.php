@@ -73,6 +73,8 @@
         <input type="text" id="modelo" name="modelo" required>
         <label for="observacao">Observação:</label>
         <input type="text" id="observacao" name="observacao" required><br><br>
+        <label for="envio">Data envio:</label>
+        <input type="date" id="envio" name="envio" required><br><br>
 
         <input type="submit" value="Enviar">
     </form>

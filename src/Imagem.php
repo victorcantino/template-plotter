@@ -5,42 +5,56 @@ class Imagem
 {
     private \GdImage|bool $imagem;
     private string $extensao;
-    private string $nome;
     private string $tipo;
     private string $nome_temp;
-    public function __construct(string $nome, array $arquivo)
+    private array $tipos_permitidos = ['image/png', 'image/jpg', 'image/jpeg'];
+    public function __construct(array $arquivo)
     {
-        $this->nome = $nome;
-        $this->tipo = $arquivo['type'];
-        // o tipo do arquivo vem neste formato 'image/png'
-        $this->extensao = explode('/', $this->tipo)[1];
-        $this->nome_temp = $arquivo['tmp_name'];
+            $this->tipo = $arquivo['type'];
+            $this->extensao = explode('/', $this->tipo)[1];
+            $this->nome_temp = $arquivo['tmp_name'];
     }
-    public function validaPNG(): bool
+    public function valida(): bool
     {
-        return filter_var($this->tipo, FILTER_SANITIZE_FULL_SPECIAL_CHARS) !== false && $this->tipo == 'image/png';
+        return filter_var($this->tipo, FILTER_SANITIZE_FULL_SPECIAL_CHARS) !== false
+            // && filter_var($this->nome_temp, FILTER_SANITIZE_FULL_SPECIAL_CHARS) !== false
+            // && trim($this->nome_temp) !== ''
+            && in_array($this->tipo, $this->tipos_permitidos);
     }
 
-    public function salva(): bool
+    function abre(): self
     {
-        $this->imagem = imagecreatefrompng($this->nome_temp);
-        $tamanho = getimagesize($this->nome_temp);
+        switch ($this->tipo) {
+            case 'image/png':
+                $this->imagem = imagecreatefrompng($this->nome_temp);
+                break;
+            case 'image/jpg':
+            case 'image/jpeg':
+                $this->imagem = imagecreatefromjpeg($this->nome_temp);
+                break;
+            default:
+                $this->imagem = false;
+                break;
+        }
+        return $this;
+    }
 
-        // se a imagem estiver na horizontal
-        if ($tamanho[0] > $tamanho[1]) {
-            $this->imagem = imagerotate($this->imagem, 270, 0);
+    /** 
+     * se a imagem estiver na horizontal 
+     * salva na vertical, girando no sentido horário
+     */
+    public function salva($caminho_imagem): bool
+    {
+        if (imagesx($this->imagem) > imagesy($this->imagem)) {
+            $this->imagem = imagerotate($this->imagem, -90, 0);
         }
 
-        $caminho_imagem = "$this->nome.$this->extensao";
-        return imagepng($this->imagem, $caminho_imagem);
-    }
-
-    /**
-     * Recupera o valor de nome
-     */
-    public function nome(): string
-    {
-        return $this->nome;
+        if ($this->tipo === 'image/png') {
+            return imagepng($this->imagem, $caminho_imagem);
+        } else if ($this->tipo === 'image/jpg' || $this->tipo === 'image/jpeg') {
+            return imagejpeg($this->imagem, $caminho_imagem);
+        }
+        return false;
     }
 
     /**

@@ -4,15 +4,16 @@ namespace Victor\TemplatePlotter;
 class Formulario
 {
     private string $material;
-    private string $largura;
-    private string $comprimento;
-    private string $quantidade;
+    private int $largura;
+    private int $comprimento;
+    private int $quantidade;
     private string $superficie;
     private string $cor_linha;
     private string $os;
     private string $projeto;
     private string $modelo;
     private string $observacao;
+    private string $envio;
     public function __construct(array $post)
     {
         $this->hidrata($post);
@@ -30,7 +31,8 @@ class Formulario
             $this->os,
             $this->projeto,
             $this->modelo,
-            $this->observacao
+            $this->observacao,
+            $this->envio
         ) = array_values($post);
     }
 
@@ -98,9 +100,39 @@ class Formulario
         return filter_var($valor, FILTER_SANITIZE_FULL_SPECIAL_CHARS) !== false && trim($valor) !== '';
     }
 
-    function __toString()
+    function nomeArquivo()
     {
-        return "{$this->os} - {$this->projeto} - {$this->modelo} - {$this->observacao}";
+        $copias = round($this->quantidade / $this->quantidadeDeImagensLaloALado());
+        $quantidade = $copias * $this->quantidadeDeImagensLaloALado();
+
+        if ($quantidade < $this->quantidade) {
+            $quantidade += $this->quantidadeDeImagensLaloALado();
+            $copias++;
+        }
+        return "{$this->os} - {$this->projeto} - {$this->modelo} - {$this->observacao} - $quantidade unidades - $copias copias";
+    }
+
+    /**
+     * Define a quantidade de imagens lado a lado
+     * Materiais de 15mm geram de 11 imagens de 20mm lado a lado
+     * Materiais de 20mm geram de 9 imagens de 25mm lado a lado
+     * Materiais de 25mm geram de 8 imagens de 30mm lado a lado
+     * @return int
+     */
+    private function quantidadeDeImagensLaloALado(): int
+    {
+        if ($this->quantidade < 8) {
+            return $this->quantidade;
+        }
+        switch ($this->largura) {
+            case 15:
+                return 11;
+            case 20:
+                return 9;
+            case 25:
+                return 8;
+        }
+        return 0;
     }
 
     /**

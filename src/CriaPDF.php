@@ -6,116 +6,113 @@ use TCPDF;
 class CriaPDF
 {
     private TCPDF $pdf;
-    private int $distancia_dobra = 25;
+    private string $extensao = 'pdf';
     private int $comprimento_pagina = 260;
 
-    private string $extensao = 'pdf';
-
-    /**
-     * Definição de criaArquivoPDF
-     * @param string $nome_pdf nome do arquivo
-     * @param string $material tipo do material aonde a imagem será aplicada
-     * @param int $comprimento_material comprimento do material em milímetros
-     * @param int $largura_material largura do material em milímetros
-     * @param string $caminho_imagem largura do material em milímetros
-     * @param string $cor_linha cor da linha, dobra ou corte é recebida como #rrggbb
-     * @return void
-     */
-    public function __construct(
-        private string $nome_pdf,
-        private string $material,
-        private int $comprimento_material,
-        private int $largura_material,
-        private string $caminho_imagem,
-        private string $cor_linha
-    ) {
-        if (getimagesize($caminho_imagem) !== false) {
-
-            if ($this->material === 'Pulseira de acesso') {
-                $comprimento_material += $comprimento_material;
-            }
-
-            // Criar nova instância do TCPDF
-            $this->pdf = new TCPDF('P', 'mm', array($this->comprimento_pagina, $comprimento_material), true, 'UTF-8', false);
-
-            // Definir informações do documento PDF
-            $this->pdf->SetCreator('TCPDF');
-            $this->pdf->SetAuthor('Victor Cantino');
-            $this->pdf->SetTitle($nome_pdf);
-            $this->pdf->SetPrintHeader(false);
-            $this->pdf->SetPrintFooter(false);
-
-            // permite que a imagem toque a borda inferior
-            $this->pdf->setAutoPageBreak(false);
-
-            // Adicionar nova página ao PDF
-            $this->pdf->AddPage();
-
-            $this->distribuiImagens();
-
-            // Gerar o arquivo PDF
-            $this->pdf->Output(__DIR__ . "/../$nome_pdf.pdf", 'F');
-        }
+    public function __construct(private Formulario $formulario, private int $altura_pagina = 300)
+    {
+        // Criar nova instância do TCPDF
+        $this->pdf = new TCPDF('P', 'mm', array($this->comprimento_pagina, $altura_pagina), true, 'UTF-8', false);
+        $this->pdf->SetCreator('Hack Print');
+        $this->pdf->SetAuthor('SublimaSystem');
+        $this->pdf->SetPrintHeader(false);
+        $this->pdf->SetPrintFooter(false);
+        // permite que a imagem toque a borda inferior
+        $this->pdf->setAutoPageBreak(false);
+        $this->pdf->AddPage();
     }
 
-    private function distribuiImagens()
+    public function salva(string $caminho_arquivo): void
+    {
+        $this->pdf->SetTitle($caminho_arquivo);
+        $this->pdf->Output(__DIR__ . '/../' . $caminho_arquivo, 'F');
+    }
+
+    public function distribuiImagens(string $imagem, int $largura, int $comprimento, bool $frente = true)
     {
         // Distribuir as imagens horizontalmente
-        $imagens_eixo_x = $this->defineImagensEixoX();
-
+        $imagens_eixo_x = $this->quantidadeDeImagensLadoALado();
+        $distancia_dobra = 25;
         for ($i = 0; $i < $imagens_eixo_x; $i++) {
-
             $x = $i * ($this->comprimento_pagina / $imagens_eixo_x);
-            $y = 0; // sempre no topo da página
-
-            $this->pdf->Image($this->caminho_imagem, $x, $y, $this->largura_material, $this->comprimento_material);
-
-            if ($this->material === 'Pulseira de acesso') {
-                $this->pdf->Image($this->caminho_imagem, $x, $this->comprimento_material, $this->largura_material, $this->comprimento_material);
-                if (str_contains($this->nome_pdf, 'frente')) {
-                    $this->desenhaLinhaInclinada($x);
-                }
-            }
-
-            if ($this->material !== 'Pulseira de acesso') {
-                $this->desenhaLinhaHorizontal($x);
+            $y = 0; // topo da página
+            $this->pdf->Image($imagem, $x, $y, $largura, $comprimento);
+            if ($frente) {
+                $this->desenhaLinhaDobra($x, $distancia_dobra, $x + $largura, $distancia_dobra);
             }
         }
     }
 
-    /**
-     * Descrição da desenhaLinhaHorizontal
-     * Desenha uma linha no topo da página como marcação para montagem
-     * @param mixed $x posição no eixo x
-     * @return void
-     */
-    private function desenhaLinhaHorizontal($x): void
+    public function distribuiImagensPulseira(string $imagem, int $largura, int $comprimento, bool $frente = true)
+    {
+        // Distribuir as imagens horizontalmente
+        $imagens_eixo_x = $this->quantidadeDeImagensLadoALado();
+        for ($i = 0; $i < $imagens_eixo_x; $i++) {
+            $x = $i * ($this->comprimento_pagina / $imagens_eixo_x);
+            $y = 0; // topo da página
+            $this->pdf->Image($imagem, $x, $y, $largura, $comprimento);
+            $this->pdf->Image($imagem, $x, $comprimento, $largura, $comprimento);
+            if ($frente) {
+                $this->desenhaLinhaPulseira($x, $largura, $comprimento);
+            }
+        }
+    }
+
+    public function distribuiImagensTicTac(string $imagem_cordao, int $comprimento_cordao, string $imagem_tictac, int $comprimento_tictac, int $largura, bool $frente = true)
+    {
+        // Distribuir as imagens horizontalmente
+        $imagens_eixo_x = $this->quantidadeDeImagensLadoALado();
+        $distancia_dobra_tictac = 25;
+        $distancia_dobra_cordao = $comprimento_tictac + 1 + 35;
+
+        for ($i = 0; $i < $imagens_eixo_x; $i++) {
+            $x = $i * ($this->comprimento_pagina / $imagens_eixo_x);
+            $y = 0; // topo da página
+
+            $this->pdf->Image($imagem_tictac, $x, $y, $largura, $comprimento_tictac);
+            $this->pdf->Image($imagem_cordao, $x, $frente ? $comprimento_tictac + 1 : $comprimento_tictac, $largura, $comprimento_cordao);
+            if ($frente) {
+                $this->desenhaLinhaDobra($x, $distancia_dobra_tictac, $x + $largura, $distancia_dobra_tictac);
+                $this->desenhaLinhaDobra($x, $distancia_dobra_cordao, $x + $largura, $distancia_dobra_cordao);
+            }
+        }
+    }
+
+    private function desenhaLinhaDobra($xa, $ya, $xb, $yb): void
     {
         $this->pdf->setLineStyle([
             'dash' => 10,
-            'color' => $this->converteHexaRGB($this->cor_linha),
+            'color' => $this->converteHexaRGB($this->formulario->corLinha()),
             'width' => 1
         ]);
 
-        $this->pdf->Line($x, $this->distancia_dobra, $x + $this->largura_material, $this->distancia_dobra);
+        $this->pdf->Line($xa, $ya, $xb, $yb);
     }
 
-    // Desenha uma linha no topo da página como marcação para montagem
-    private function desenhaLinhaInclinada($x): void
+    private function desenhaLinhaPulseira($x, $largura, $comprimento): void
     {
+        $distancia_corte = 15;
+
         $this->pdf->setLineStyle([
-            'color' => $this->converteHexaRGB($this->cor_linha),
+            'color' => $this->converteHexaRGB($this->formulario->corLinha()),
             'width' => 1
         ]);
 
-        $this->pdf->Line($x, -$this->distancia_dobra / 2, $x + $this->largura_material, $this->distancia_dobra / 2);
-        $this->pdf->Line($x, $this->comprimento_material + $this->distancia_dobra / 2, $x + $this->largura_material, $this->comprimento_material - $this->distancia_dobra / 2);
-        $this->pdf->Line($x, $this->comprimento_material * 2 - $this->distancia_dobra / 2, $x + $this->largura_material, $this->comprimento_material * 2 + $this->distancia_dobra / 2);
+        $this->pdf->Line($x, -$distancia_corte, $x + $largura, $distancia_corte);
+        $this->pdf->Line($x, $comprimento + $distancia_corte, $x + $largura, $comprimento - $distancia_corte);
+        $this->pdf->Line($x, $comprimento * 2 - $distancia_corte, $x + $largura, $comprimento * 2 + $distancia_corte);
     }
 
-    private function defineImagensEixoX(): int
+    /**
+     * Define a quantidade de imagens lado a lado
+     * Materiais de 15mm geram de 11 imagens de 20mm lado a lado
+     * Materiais de 20mm geram de 9 imagens de 25mm lado a lado
+     * Materiais de 25mm geram de 8 imagens de 30mm lado a lado
+     * @return int
+     */
+    private function quantidadeDeImagensLadoALado(): int
     {
-        switch ($this->largura_material) {
+        switch ($this->formulario->larguraMaterial()) {
             case 15:
                 return 11;
             case 20:
@@ -123,7 +120,7 @@ class CriaPDF
             case 25:
                 return 8;
         }
-        return 4;
+        return 1;
     }
 
     /**
@@ -140,5 +137,10 @@ class CriaPDF
     private function converteHexaRGB($cor_hexadecimal): array
     {
         return sscanf($cor_hexadecimal, "#%02x%02x%02x");
+    }
+
+    function calculaQuantidadeDeCopias($quantidade_total): int
+    {
+        return round($quantidade_total / $this->quantidadeDeImagensLadoALado());
     }
 }

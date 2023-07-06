@@ -34,7 +34,6 @@ class Compacta
         header('Content-disposition: attachment; filename=' . $this->filename);
         header('Content-Length: ' . filesize($this->filename));
         readfile($this->filename);
-
     }
 }
 ?>
